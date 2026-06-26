@@ -59,6 +59,72 @@ def largest_bright_contour(image, v_min=200, min_area=200, dilate=2):
     return best
 
 
+def _gate_in_mask(mask, min_area=400, max_aspect=2.5, dilate=2):
+    """
+    Largest roughly-SQUARE bright contour in a binary mask, or None.
+    Gates are square frames (aspect ~1); the long glowing boundary lines have a
+    very elongated bounding box, so an aspect-ratio test rejects them.
+    """
+    if dilate:
+        mask = cv2.dilate(mask, np.ones((5, 5), np.uint8), iterations=dilate)
+    contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    best, best_area = None, float(min_area)
+    for c in contours:
+        area = cv2.contourArea(c)
+        if area <= best_area:
+            continue
+        x, y, w, h = cv2.boundingRect(c)
+        if w == 0 or h == 0 or max(w, h) / min(w, h) > max_aspect:
+            continue                       # too elongated -> a boundary line, not a gate
+        best, best_area = c, area
+    return best
+
+
+def largest_gate(image, v_min=200, min_area=400, max_aspect=2.5):
+    """Largest square-ish GLOWING gate (forward: cyan / downward: white), or None."""
+    return _gate_in_mask(bright_mask(image, v_min), min_area, max_aspect)
+
+
+def largest_cyan_gate(image, min_area=400, max_aspect=2.5):
+    """Largest square-ish CYAN gate on the forward camera, or None."""
+    hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
+    mask = cv2.inRange(hsv, CYAN_LOWER, CYAN_UPPER)
+    return _gate_in_mask(mask, min_area, max_aspect)
+
+
+def gate_nearest_to(image, target_col, v_min=200, min_area=500, max_aspect=2.5,
+                    dilate=2):
+    """
+    Square-ish glowing gate whose center column is closest to `target_col`, or None.
+
+    For yaw visual-servoing in a field of similar gates, picking the LARGEST gate
+    flickers between them. Track ONE gate instead: pass the previously-tracked gate's
+    column as `target_col` (start at the image center) and update it each frame. The
+    loop then locks onto a single gate and follows it as the drone turns.
+    """
+    mask = bright_mask(image, v_min)
+    if dilate:
+        mask = cv2.dilate(mask, np.ones((5, 5), np.uint8), iterations=dilate)
+    contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    best, best_dist = None, float("inf")
+    for c in contours:
+        if cv2.contourArea(c) < min_area:
+            continue
+        x, y, w, h = cv2.boundingRect(c)
+        if w == 0 or h == 0 or max(w, h) / min(w, h) > max_aspect:
+            continue
+        dist = abs((x + w / 2.0) - target_col)
+        if dist < best_dist:
+            best, best_dist = c, dist
+    return best
+
+
+def gate_nearest_center(image, v_min=200, min_area=500, max_aspect=2.5, dilate=2):
+    """Square-ish gate nearest the image center (a one-shot gate_nearest_to)."""
+    return gate_nearest_to(image, image.shape[1] / 2.0, v_min, min_area,
+                           max_aspect, dilate)
+
+
 def set_ground(alt):
     """Record the ground altitude (sampled once at launch)."""
     global _ground_alt

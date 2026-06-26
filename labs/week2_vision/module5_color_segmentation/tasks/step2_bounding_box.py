@@ -44,11 +44,12 @@ def update(drone):
     ##################################
     #### START PUT CODE HERE #########
 
-    # 1. contours = uav_utils.find_contours(image, LOWER, UPPER)   # cyan range
-    # 2. best = uav_utils.get_largest_contour(contours, MIN_AREA)
-    # 3. if best is None: return False
-    # 4. x, y, w, h = cv2.boundingRect(best)
-    # 5. When _timer >= HOVER_TIME: print the box and set _done = True
+    # The long glowing boundary lines are also cyan, so use the gate helper, which
+    # keeps only square-ish (gate-shaped) contours.
+    # 1. best = neo_lab.largest_cyan_gate(image, MIN_AREA)
+    # 2. if best is None: return False
+    # 3. x, y, w, h = cv2.boundingRect(best)
+    # 4. When _timer >= HOVER_TIME: print the box and set _done = True
 
     ###### END PUT CODE HERE #########
     ##################################

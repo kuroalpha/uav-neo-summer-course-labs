@@ -24,16 +24,18 @@ import neo_lab
 V_MIN = 200
 MIN_AREA = 500
 COL_CENTER = 320
-KP = 0.4
-KI = 0.05
-KD = 0.15
-MAX_YAW = 0.4
-CENTER_TOL = 0.12    # normalized error considered centered
-HOLD_TIME = 2.0
+KP = 0.35
+KI = 0.0
+KD = 0.2
+MAX_YAW = 0.25
+SEARCH_YAW = 0.2
+CENTER_TOL = 0.15    # normalized error considered centered
+HOLD_TIME = 1.0
 
 # -- Module-level state -----------------------------------------------------
 _err_int = 0.0
 _prev_err = 0.0
+_target_col = None
 _hold = 0.0
 _done = False
 
@@ -47,24 +49,28 @@ def pid_control(err, err_int, err_dot, kp, ki, kd):
     return output
 
 def reset():
-    global _err_int, _prev_err, _hold, _done
+    global _err_int, _prev_err, _target_col, _hold, _done
     _err_int = 0.0
     _prev_err = 0.0
+    _target_col = None
     _hold = 0.0
     _done = False
 
 
 def update(drone):
-    global _err_int, _prev_err, _hold, _done
+    global _err_int, _prev_err, _target_col, _hold, _done
     if _done:
         return True
     ##################################
     #### START PUT CODE HERE #########
 
-    # Vision gives the error, PID turns it into a yaw command.
-    # 1. best = neo_lab.largest_bright_contour(image, V_MIN, MIN_AREA)  # the glowing gate
-    # 2. If best is None: stop, reset _err_int and _hold, return False.
-    # 3. row, col = uav_utils.get_contour_center(best)
+    # Vision gives the error, PID turns it into a yaw command. Track ONE gate so the
+    # target does not jump between gates as you turn.
+    # 1. best = neo_lab.gate_nearest_center(image, V_MIN, MIN_AREA) if _target_col is None
+    #    else neo_lab.gate_nearest_to(image, _target_col, V_MIN, MIN_AREA)
+    # 2. If best is None: spin to search (send_pcmd(0,0,SEARCH_YAW,0)), set _target_col=None,
+    #    reset _err_int and _hold, return False.
+    # 3. row, col = uav_utils.get_contour_center(best) ; _target_col = col
     # 4. error = (col - COL_CENTER) / COL_CENTER          # normalized pixel error
     # 5. Update _err_int (clamped), err_dot, _prev_err (see Step 1).
     # 6. yaw = uav_utils.clamp(pid_control(error, _err_int, err_dot, KP, KI, KD),

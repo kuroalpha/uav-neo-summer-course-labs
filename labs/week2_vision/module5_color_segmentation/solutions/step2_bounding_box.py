@@ -43,8 +43,7 @@ def update(drone):
     drone.flight.stop()   # hover in place
     _timer += drone.get_delta_time()
     image = drone.camera.get_color_image()
-    contours = uav_utils.find_contours(image, LOWER, UPPER)
-    best = uav_utils.get_largest_contour(contours, MIN_AREA)
+    best = neo_lab.largest_cyan_gate(image, MIN_AREA)   # square-ish cyan gate, not a line
     if best is None:
         return False
     x, y, w, h = cv2.boundingRect(best)

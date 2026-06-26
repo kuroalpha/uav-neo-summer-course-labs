@@ -21,15 +21,13 @@ if _d not in _sys.path:
 import neo_lab
 
 # -- Constants --------------------------------------------------------------
-LOWER = neo_lab.CYAN_LOWER
-UPPER = neo_lab.CYAN_UPPER
 MIN_AREA   = 400
 COL_CENTER = 320
 MAX_YAW    = 0.3        # yaw authority for centering
 APPROACH_PITCH = 0.2    # forward speed once centered
-CENTER_TOL = 60         # px error to count as centered
+CENTER_TOL = 90         # px error to count as centered
 SEARCH_YAW = 0.2        # spin slowly when no gate is seen
-TARGET_WIDTH = 260      # gate this wide (px) => close enough
+TARGET_WIDTH = 170      # gate this wide (px) => close enough
 
 # -- Module-level state -----------------------------------------------------
 _done = False
@@ -46,7 +44,7 @@ def update(drone):
     ##################################
     #### START PUT CODE HERE #########
 
-    # 1. Find the largest cyan gate contour like Step 2.
+    # 1. best = neo_lab.largest_cyan_gate(image, MIN_AREA)   # square-ish gate
     # 2. If best is None: spin to search -> send_pcmd(0, 0, SEARCH_YAW, 0); return False
     # 3. x, y, w, h = cv2.boundingRect(best)
     # 4. gate_col = x + w / 2.0 ; err = (gate_col - COL_CENTER) / COL_CENTER

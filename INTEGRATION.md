@@ -61,27 +61,31 @@ fiducials over a blue wall / grey floor; the downward camera sees the gate frame
 **white** edges. There are **no red props and no colored ground line**, so the vision
 labs detect gates by brightness (`neo_lab.bright_mask`) / cyan (`neo_lab.CYAN_LOWER/UPPER`).
 
-## Validation status (flown in the sim)
+## Validation status (all flown to completion in the sim)
 
 - ✅ Connection / handshake (after the IP fix)
 - ✅ `neo_lab.Launcher` — arm + climb to a height above the measured ground
 - ✅ **Module 2** (P altitude hold) — launch + hold 5 m + setpoint sequence 3→6→2 m
 - ✅ **Module 3 Step 1** (PID altitude) — holds 5 m within ~0.05 m
-- ✅ **Module 3 Step 2** (fly-a-distance) — flies forward, holds altitude, and completes
-  on a settle-after-MIN_TRAVEL criterion. NOTE: distance is dead-reckoned from velocity
-  (no position feedback) and pitch has a deadband, so it settles ~0.5–1 m short and
-  reports the estimate honestly — a real lesson, not a bug.
-- ✅ **Module 4** (downward gate) — find contours → locate gate (row 240, col 320) →
-  center over it → land, full sequence
-- ◑ **Module 3 Step 3** (gate visual-servo) — detection + yaw loop run live; "lock"
-  latches inconsistently because the largest bright blob flickers between gate edges
-  and boundary lines while yawing (CENTER_TOL widened to help). Detection itself is
-  validated offline on the captured frame.
-- ◑ **Module 5** (seek cyan gate) — cyan detection validated offline on the captured
-  forward frame; the largest cyan blob can be a boundary line rather than a square gate.
-  Not flown to completion live.
-- ✅ All Week 2 vision step solutions run against the **real captured frames** (offline
-  harness) with 0 failures.
+- ✅ **Module 3 Step 2** (fly-a-distance) — flies forward, holds altitude, completes on a
+  settle-after-MIN_TRAVEL criterion. NOTE: distance is dead-reckoned from velocity (no
+  position feedback) + pitch deadband, so it settles ~0.5–1 m short and reports the
+  estimate honestly — a real lesson, not a bug.
+- ✅ **Module 3 Step 3** (gate visual-servo) — "Locked onto the gate". Full Module 3 runs
+  Step 1 → 2 → 3 → land end to end.
+- ✅ **Module 4** (downward gate) — find contours → locate gate → center over it → land.
+- ✅ **Module 5** (seek cyan gate) — mask → bounding box → search/center/approach →
+  "Reached the gate".
+- ✅ Week 2 Modules 2/3 (threshold/morphology, edge regression) complete on timers.
+- ✅ All Week 2 vision step solutions also run against the **real captured frames**
+  (offline harness) with 0 failures.
+
+### Gate vision in a multi-gate field
+Gates are detected by brightness/cyan and filtered to roughly-SQUARE contours
+(`neo_lab.largest_gate` / `largest_cyan_gate`) to reject the elongated glowing boundary
+lines. For yaw visual-servoing, selecting the *largest* gate flickers between several
+similar gates, so Step 3 **tracks one gate** (`gate_nearest_to` seeded at the image
+center) and uses a tolerant lock — this is what makes it latch reliably.
 
 ### Throttle / pitch deadband
 Commands with magnitude below ~0.05 are absorbed by the hover-hold, so pure-proportional
