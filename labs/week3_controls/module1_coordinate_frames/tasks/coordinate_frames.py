@@ -2,10 +2,6 @@
 MIT BWSI Autonomous Drone Racing Course - UAV Neo
 GNU General Public License v3.0
 
-File Name: coordinate_frames.py
-Title: Week 3 Module 1 — Coordinate Frames & Dynamics
-Source notebook: CoordinateFrames_and_Dynamics.ipynb
-
 This is a CONCEPT lab — it does not need the simulator.
 Fill in the functions below, then run it directly:
     python3 coordinate_frames.py
@@ -21,14 +17,11 @@ import numpy as np
 def euler_to_rot(roll, pitch, yaw):
     """
     Build a body->world rotation matrix from Euler angles (radians) using the
-    aerospace ZYX convention:  R = Rz(yaw) @ Ry(pitch) @ Rx(roll).
+    aerospace ZYX convention. See the README (Key terms) for the convention.
     """
     ##################################
     #### START PUT CODE HERE #########
-    # 1. Build Rx (rotation about x by roll), Ry (about y by pitch), Rz (about z by yaw).
-    #    Each is a 3x3 np.array of sines/cosines.
-    # 2. Return Rz @ Ry @ Rx
-    R = np.eye(3)  # YOUR CODE HERE
+    R = np.eye(3)
     ###### END PUT CODE HERE #########
     ##################################
     return R
@@ -37,19 +30,15 @@ def euler_to_rot(roll, pitch, yaw):
 # ── Part A: rotation matrix -> quaternion ───────────────────────────────────────────
 def rot_to_quat(R):
     """
-    Convert a 3x3 rotation matrix to a quaternion (scalar-last: x, y, z, w).
-    Use the standard trace formula:
-        w = sqrt(1 + R00 + R11 + R22) / 2
-        x = (R21 - R12) / (4w)
-        y = (R02 - R20) / (4w)
-        z = (R10 - R01) / (4w)
+    Convert a 3x3 rotation matrix to a quaternion (scalar-last: x, y, z, w) using the
+    standard trace method. See the README (Key terms) for the quaternion background.
     """
     ##################################
     #### START PUT CODE HERE #########
-    w = 1.0  # YOUR CODE HERE
-    x = 0.0  # YOUR CODE HERE
-    y = 0.0  # YOUR CODE HERE
-    z = 0.0  # YOUR CODE HERE
+    w = 1.0
+    x = 0.0
+    y = 0.0
+    z = 0.0
     ###### END PUT CODE HERE #########
     ##################################
     return np.array([x, y, z, w])
@@ -59,7 +48,7 @@ def rot_to_quat(R):
 def enu_to_ned(vec):
     """
     Convert a vector from ENU (East, North, Up) to NED (North, East, Down).
-        ned = [north, east, -up]  where vec = [east, north, up]
+    See the README (Key terms) for how the two conventions relate.
     """
     e, n, u = vec
     ##################################
@@ -73,10 +62,8 @@ def enu_to_ned(vec):
 # ── Part B: point-mass thrust sizing ────────────────────────────────────────────────
 def thrust_allocation(mass, k_f, total_thrust):
     """
-    Split a total thrust evenly across 4 rotors and solve for rotor speed.
-        thrust_per_motor = total_thrust / 4
-        omega = sqrt(thrust_per_motor / k_f)
-    Returns: (omega, thrust_per_motor).
+    Split a total thrust evenly across 4 rotors and solve for rotor speed, given the
+    thrust model thrust_per_motor = k_f * omega**2. Returns: (omega, thrust_per_motor).
     """
     ##################################
     #### START PUT CODE HERE #########
@@ -88,7 +75,7 @@ def thrust_allocation(mass, k_f, total_thrust):
 
 
 def hover_thrust(mass, g=9.81):
-    """Total thrust (N) needed to hover: T = m * g."""
+    """Total thrust (N) needed to hover (see README, Key terms)."""
     ##################################
     #### START PUT CODE HERE #########
     return 0.0  # YOUR CODE HERE

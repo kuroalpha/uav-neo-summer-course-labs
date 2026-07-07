@@ -2,10 +2,6 @@
 MIT BWSI Autonomous Drone Racing Course - UAV Neo
 GNU General Public License v3.0
 
-File Name: image_formation.py
-Title: Week 2 Module 1 — Pinhole Camera Model
-Source notebook: 01_Image_Formation.ipynb
-
 This is a CONCEPT lab — it does not need the simulator.
 Fill in the five functions below, then run it directly:
     python3 image_formation.py
@@ -22,16 +18,15 @@ def project_perspective(point_cam, f):
     """
     Project a 3D point expressed in CAMERA coordinates onto the image plane.
 
-    Pinhole model:  x = f * X / Z ,  y = f * Y / Z
+    Uses the pinhole camera model (see README, Key terms).
     Args:  point_cam = (X, Y, Z) in meters, f = focal length in meters.
     Returns: (x, y) image-plane coordinates in meters.
     """
     X, Y, Z = point_cam
     ##################################
     #### START PUT CODE HERE #########
-    # Apply the pinhole equations and return (x, y).
-    x = 0.0  # YOUR CODE HERE
-    y = 0.0  # YOUR CODE HERE
+    x = 0.0
+    y = 0.0
     ###### END PUT CODE HERE #########
     ##################################
     return (x, y)
@@ -40,17 +35,16 @@ def project_perspective(point_cam, f):
 # ── Q2: Conversion to Pixels ────────────────────────────────────────────────────────
 def meters_to_pixels(x, y, pixel_size, principal_point):
     """
-    Convert image-plane coordinates (meters) to pixel coordinates.
-
-    u = x / pixel_size + cx ,  v = y / pixel_size + cy
+    Convert image-plane coordinates (meters) to pixel coordinates using the pixel size
+    and principal point (see README, Key terms).
     Args:  pixel_size = width of one pixel in meters, principal_point = (cx, cy).
     Returns: (u, v) in pixels.
     """
     cx, cy = principal_point
     ##################################
     #### START PUT CODE HERE #########
-    u = 0.0  # YOUR CODE HERE
-    v = 0.0  # YOUR CODE HERE
+    u = 0.0
+    v = 0.0
     ###### END PUT CODE HERE #########
     ##################################
     return (u, v)
@@ -59,16 +53,11 @@ def meters_to_pixels(x, y, pixel_size, principal_point):
 # ── Q3: Intrinsic Matrix ────────────────────────────────────────────────────────────
 def intrinsic_matrix(fx, fy, cx, cy):
     """
-    Build the 3x3 camera intrinsic matrix K.
-
-        [ fx  0  cx ]
-        [  0 fy  cy ]
-        [  0  0   1 ]
+    Build the 3x3 camera intrinsic matrix K from fx, fy, cx, cy (see README, Key terms).
     """
     ##################################
     #### START PUT CODE HERE #########
-    # Hint: use np.array([...]) with three rows.
-    K = np.eye(3)  # YOUR CODE HERE
+    K = np.eye(3)
     ###### END PUT CODE HERE #########
     ##################################
     return K
@@ -77,18 +66,15 @@ def intrinsic_matrix(fx, fy, cx, cy):
 # ── Q4: Point Projection with Known Pose ────────────────────────────────────────────
 def project_world_point(K, R, t, point_world):
     """
-    Project a 3D WORLD point to pixels given the camera pose.
-
-        p_cam   = R @ point_world + t      (world -> camera)
-        p_homog = K @ p_cam                (camera -> image, homogeneous)
-        (u, v)  = (p_homog[0]/p_homog[2], p_homog[1]/p_homog[2])
+    Project a 3D WORLD point to pixels given the camera pose (R, t) and intrinsics K:
+    transform world -> camera, then camera -> image with K, and divide by the homogeneous
+    coordinate. See the README (Key terms).
     Returns: (u, v) in pixels.
     """
     ##################################
     #### START PUT CODE HERE #########
-    # Hint: use the @ operator for matrix multiply, then divide by the 3rd element.
-    u = 0.0  # YOUR CODE HERE
-    v = 0.0  # YOUR CODE HERE
+    u = 0.0
+    v = 0.0
     ###### END PUT CODE HERE #########
     ##################################
     return (u, v)
@@ -97,16 +83,13 @@ def project_world_point(K, R, t, point_world):
 # ── Q5: Radial Distortion ───────────────────────────────────────────────────────────
 def apply_radial_distortion(x, y, k1, k2):
     """
-    Apply radial (barrel/pincushion) distortion to a normalized image point.
-
-        r^2    = x^2 + y^2
-        factor = 1 + k1*r^2 + k2*r^4
-        x_d    = x * factor ,  y_d = y * factor
+    Apply radial (barrel/pincushion) distortion to a normalized image point using
+    coefficients k1, k2 (see README, Key terms).
     Returns: (x_d, y_d).
     """
     ##################################
     #### START PUT CODE HERE #########
-    factor = 1.0  # YOUR CODE HERE (replace with 1 + k1*r^2 + k2*r^4)
+    factor = 1.0
     ###### END PUT CODE HERE #########
     ##################################
     return (x * factor, y * factor)

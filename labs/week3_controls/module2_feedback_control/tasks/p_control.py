@@ -2,10 +2,6 @@
 MIT BWSI Autonomous Drone Racing Course - UAV Neo
 GNU General Public License v3.0
 
-File Name: p_control.py
-Title: Week 3 Module 2 — Proportional Control (concept warm-up)
-Source notebook: simple_feedback_control.ipynb  (Simple Slide Camera)
-
 CONCEPT lab — no simulator needed. Fill in p_control, then run directly:
     python3 p_control.py
 Then move on to step1_altitude_hold.py to use the same idea on the real drone.
@@ -17,10 +13,10 @@ import numpy as np
 
 
 def p_control(y_err, kp):
-    """Proportional control law:  command = kp * error."""
+    """Return the proportional control command for the given error and gain (see README, Key terms)."""
     ##################################
     #### START PUT CODE HERE #########
-    return 0.0  # YOUR CODE HERE (return kp * y_err)
+    return 0.0
     ###### END PUT CODE HERE #########
     ##################################
 

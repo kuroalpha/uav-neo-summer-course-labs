@@ -5,7 +5,6 @@ GNU General Public License v3.0
 Week 2/3 Lab — Step 2: Fly a Distance (PID on Position)  (SOLUTION)
 Integrate forward velocity into position and PID to a target distance,
 while a proportional term keeps altitude.
-Source: simple_feedback_control.ipynb (2-D quad).
 """
 
 import drone_core
@@ -14,7 +13,7 @@ import drone_utils as uav_utils
 # -- Course setup: makes the shared `neo_lab` helper importable.
 #    You don't need to read or change this block. --
 import os as _os, sys as _sys
-_d = _os.path.dirname(_os.path.abspath(__file__))
+_d = _os.path.dirname(_os.path.realpath(__file__))
 while _os.path.basename(_d) != "labs" and _os.path.dirname(_d) != _d:
     _d = _os.path.dirname(_d)
 if _d not in _sys.path:

@@ -5,7 +5,6 @@ GNU General Public License v3.0
 Week 2/3 Lab — Step 1: Proportional Altitude Hold
 Hold a target height using proportional throttle control.
 Heights are measured above the ground sampled at launch.
-Source: simple_feedback_control.ipynb (p_control).
 """
 
 import drone_core
@@ -14,7 +13,7 @@ import drone_utils as uav_utils
 # -- Course setup: makes the shared `neo_lab` helper importable.
 #    You don't need to read or change this block. --
 import os as _os, sys as _sys
-_d = _os.path.dirname(_os.path.abspath(__file__))
+_d = _os.path.dirname(_os.path.realpath(__file__))
 while _os.path.basename(_d) != "labs" and _os.path.dirname(_d) != _d:
     _d = _os.path.dirname(_d)
 if _d not in _sys.path:
@@ -45,14 +44,10 @@ def update(drone):
     ##################################
     #### START PUT CODE HERE #########
 
-    # Proportional control:  output = Kp * error.  Throttle sets vertical SPEED
-    # (~12 m/s per unit) and stop() holds altitude, so use a small gain.
-    # 1. height = neo_lab.height(drone)          # meters above the launch ground
-    # 2. error = TARGET_HEIGHT - height
-    # 3. throttle = uav_utils.clamp(KP * error, -THROTTLE_LIMIT, THROTTLE_LIMIT)
-    # 4. drone.flight.send_pcmd(0, 0, 0, throttle)
-    # 5. Accumulate _hold while abs(error) < TOL (else reset _hold = 0).
-    # 6. When _hold >= HOLD_TIME: stop and set _done = True
+    # Use proportional control on the height error to hold TARGET_HEIGHT.
+    # neo_lab.height(drone) reports meters above the launch ground. Throttle is a
+    # vertical-velocity command; clamp it to +/-THROTTLE_LIMIT. Finish (set _done) once
+    # the height stays within TOL for HOLD_TIME. See the README (Proportional Control).
 
     ###### END PUT CODE HERE #########
     ##################################

@@ -4,7 +4,6 @@ GNU General Public License v3.0
 
 Week 2/3 Lab — Step 2: Largest Gate
 Locate the largest glowing gate frame and report its center and area.
-Source: 04_Downward.ipynb (largest contour + centroid).
 """
 
 import drone_core
@@ -15,7 +14,7 @@ import numpy as np
 # -- Course setup: makes the shared `neo_lab` helper importable.
 #    You don't need to read or change this block. --
 import os as _os, sys as _sys
-_d = _os.path.dirname(_os.path.abspath(__file__))
+_d = _os.path.dirname(_os.path.realpath(__file__))
 while _os.path.basename(_d) != "labs" and _os.path.dirname(_d) != _d:
     _d = _os.path.dirname(_d)
 if _d not in _sys.path:
@@ -45,11 +44,10 @@ def update(drone):
     ##################################
     #### START PUT CODE HERE #########
 
-    # 1. best = neo_lab.largest_bright_contour(image, V_MIN, MIN_AREA)
-    # 2. if best is None: return False        # nothing bright enough yet
-    # 3. center = uav_utils.get_contour_center(best)   # (row, col)
-    #    area   = uav_utils.get_contour_area(best)
-    # 4. When _timer >= HOVER_TIME: print center & area, set _done = True
+    # Find the largest bright contour with neo_lab.largest_bright_contour(image, V_MIN,
+    # MIN_AREA); if it returns None nothing is bright enough yet -> return False. Otherwise
+    # report its center and area (see uav_utils for contour helpers). Advance _timer and
+    # finish at HOVER_TIME.
 
     ###### END PUT CODE HERE #########
     ##################################

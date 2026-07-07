@@ -5,7 +5,6 @@ GNU General Public License v3.0
 Week 2/3 Lab — Step 2: Fly a Distance (PID on Position)
 Integrate forward velocity into position and PID to a target distance,
 while a proportional term keeps altitude.
-Source: simple_feedback_control.ipynb (2-D quad).
 """
 
 import drone_core
@@ -14,7 +13,7 @@ import drone_utils as uav_utils
 # -- Course setup: makes the shared `neo_lab` helper importable.
 #    You don't need to read or change this block. --
 import os as _os, sys as _sys
-_d = _os.path.dirname(_os.path.abspath(__file__))
+_d = _os.path.dirname(_os.path.realpath(__file__))
 while _os.path.basename(_d) != "labs" and _os.path.dirname(_d) != _d:
     _d = _os.path.dirname(_d)
 if _d not in _sys.path:
@@ -43,10 +42,10 @@ _hold = 0.0
 _done = False
 
 def pid_control(err, err_int, err_dot, kp, ki, kd):
-    """Standard PID law: output = kp*err + ki*err_int + kd*err_dot."""
+    """Return the PID controller output from the three gain terms (see README, Key terms)."""
     ##################################
     #### START PUT CODE HERE #########
-    output = 0.0  # YOUR CODE HERE (combine the three gain terms)
+    output = 0.0
     ###### END PUT CODE HERE #########
     ##################################
     return output
@@ -68,19 +67,12 @@ def update(drone):
     ##################################
     #### START PUT CODE HERE #########
 
-    # We have no direct (x, z) position, so integrate velocity to estimate distance.
-    # Pitch accelerates the drone, so use the velocity itself as the derivative term
-    # (KD) to brake before the target instead of overshooting.
-    # 1. dt = drone.get_delta_time()
-    # 2. velocity = drone.physics.get_linear_velocity()   # (x=right, y=up, z=forward)
-    # 3. _pos += velocity[2] * dt
-    # 4. error = TARGET_DIST - _pos ; _err_int += error*dt ; err_dot = -velocity[2]
-    # 5. pitch = uav_utils.clamp(pid_control(error, _err_int, err_dot, KP, KI, KD),
-    #                            -PITCH_LIMIT, PITCH_LIMIT)
-    # 6. Hold height too: throttle = clamp(ALT_KP*(TARGET_HEIGHT - neo_lab.height(drone)),
-    #                                      -THROTTLE_LIMIT, THROTTLE_LIMIT)
-    # 7. send_pcmd(pitch, 0, 0, throttle); finish once _pos has passed
-    #    (TARGET_DIST - DIST_TOL) AND the drone has slowed below SETTLE_SPEED for HOLD_TIME
+    # There is no direct (x, z) readout, so estimate forward distance by dead reckoning:
+    # integrate the forward component of drone.physics.get_linear_velocity() over time.
+    # PID that distance to TARGET_DIST for the pitch command (clamped to PITCH_LIMIT), and
+    # use a proportional term (ALT_KP) on height to hold TARGET_HEIGHT. Count as arrived
+    # only after MIN_TRAVEL, once speed drops below SETTLE_SPEED for HOLD_TIME. See the
+    # README (Key terms) for dead reckoning and the PID law.
 
     ###### END PUT CODE HERE #########
     ##################################

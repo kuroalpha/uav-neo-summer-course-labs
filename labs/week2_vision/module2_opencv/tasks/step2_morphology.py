@@ -4,7 +4,6 @@ GNU General Public License v3.0
 
 Week 2/3 Lab — Step 2: Morphology (Opening)
 Clean a binary mask with erosion followed by dilation (an 'opening').
-Source: 02_OpenCV.ipynb (cv2.erode / cv2.dilate).
 """
 
 import drone_core
@@ -15,7 +14,7 @@ import numpy as np
 # -- Course setup: makes the shared `neo_lab` helper importable.
 #    You don't need to read or change this block. --
 import os as _os, sys as _sys
-_d = _os.path.dirname(_os.path.abspath(__file__))
+_d = _os.path.dirname(_os.path.realpath(__file__))
 while _os.path.basename(_d) != "labs" and _os.path.dirname(_d) != _d:
     _d = _os.path.dirname(_d)
 if _d not in _sys.path:
@@ -45,12 +44,10 @@ def update(drone):
     ##################################
     #### START PUT CODE HERE #########
 
-    # 1. Build a binary mask like Step 1 (threshold the grayscale image).
-    # 2. kernel = np.ones((KERNEL_SIZE, KERNEL_SIZE), np.uint8)
-    # 3. eroded = cv2.erode(mask, kernel, iterations=1)
-    # 4. opened = cv2.dilate(eroded, kernel, iterations=1)
-    # 5. Compare np.count_nonzero(mask) vs np.count_nonzero(opened).
-    # 6. When _timer >= HOVER_TIME: print how many pixels were removed, set _done = True
+    # Opening (erode then dilate) removes small speckles but keeps big shapes. Build a
+    # binary mask like Step 1, then open it with a KERNEL_SIZE square kernel and compare
+    # the white-pixel count before and after to see what was removed. Advance _timer and
+    # finish once it reaches HOVER_TIME. See the README (Key terms) for morphology.
 
     ###### END PUT CODE HERE #########
     ##################################

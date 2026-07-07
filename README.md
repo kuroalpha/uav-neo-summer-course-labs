@@ -1,11 +1,17 @@
-# UAV Neo Course Labs — Week 2 (Vision) & Week 3 (Controls)
+# UAV Neo Summer Course Labs
 
 MIT BWSI Autonomous Drone Racing Course — UAV Neo
 
-These labs turn the **Week 2 Vision** and **Week 3 Controls** lessons into hands-on labs
-you run against the **UAV Neo simulator** — the same `labs/<module>/tasks/<step>.py`
-structure as [`uav-neo-prereq-labs`](../uav-neo-prereq-labs). You fill in small chunks of
-code, run them, and watch the drone fly (or, for the math labs, see `PASS`/`FAIL` checks).
+Program an autonomous drone in the **UAV Neo simulator**. The course runs four weeks:
+Week 1 is hands-on — building your drone, learning to fly, and team building — and
+Weeks 2–4 (these labs) are where you program it to see, fly, and navigate on its own:
+
+- **Week 2 — Vision:** find and measure things in the drone's camera images.
+- **Week 3 — Controls:** turn sensor readings into smooth, stable flight.
+- **Week 4 — Integration:** combine vision and control into multi-axis maneuvers.
+
+Each lab hands you a small piece of code to complete; you run it and watch the drone fly.
+The math labs check your work with `PASS`/`FAIL` instead.
 
 ---
 
@@ -83,11 +89,13 @@ drone sim course/<week>/<module>/tasks/<step>.py    # just one step, your code
 ## 3. Flying in the simulator — what you need to know
 
 The simulated drone does **not** behave like a simple "go to (x, y, z)" robot. A few facts
-that the labs are built around (and that you'll need when tuning your own code):
+about how it flies that you'll rely on when writing your controllers:
 
-- **It starts on the ground at a non-zero altitude reading.** `get_altitude()` is not 0 at
-  the ground. So the labs measure height **above the ground sampled at launch** — use
-  `neo_lab.height(drone)`, not the raw altitude, and aim for heights *above* the ground.
+- **`get_altitude()` is absolute, not height above the ground.** It reports the drone's
+  world altitude, and the drone is usually already airborne when your program takes over
+  (you launch it, then press Enter). So measure height **relative to a reference sampled
+  when your program starts** — use `neo_lab.height(drone)` (the Launcher records that
+  reference), not the raw altitude.
 - **`takeoff()` arms the motors but does not climb on its own.** To get airborne you give
   throttle. The shared `neo_lab.Launcher` does this for you (arm, then climb to a safe
   height) — every simulator lab's `main.py` runs it before your steps.
@@ -115,6 +123,7 @@ import neo_lab
 launcher = neo_lab.Launcher(target_height=3.0)  # arm + climb to N m above ground
 launcher.update(drone)        # call each frame; returns True once airborne & stable
 neo_lab.height(drone)         # altitude in meters above the launch ground
+neo_lab.world_position(drone) # true (x_east, y_up, z_north) m from the sim (no drift)
 
 # --- gate vision ---
 neo_lab.bright_mask(image, v_min=200)          # 0/255 mask of glowing gate edges
@@ -174,6 +183,8 @@ drone.go()
 | `module3_linear_regression`  | simulator | Fit a line (least squares) to glowing edges, then follow one |
 | `module4_downward`           | simulator | Contour analysis: detect & center over a gate (downward camera) |
 | `module5_color_segmentation` | simulator | HSV color segmentation → search, center, and reach a cyan gate |
+| `module6_distance_estimation`| simulator | Range to a gate from apparent size (inverse of Module 1) |
+| `module7_optical_flow`       | simulator | Estimate ground velocity from the downward camera |
 
 ### Week 3 — Controls (`labs/week3_controls/`)
 
@@ -181,13 +192,58 @@ drone.go()
 |--------|------|-------|
 | `module1_coordinate_frames` | concept   | Euler↔rotation, rotation→quaternion, ENU/NED, thrust sizing |
 | `module2_feedback_control`  | concept + simulator | Proportional control → altitude hold & setpoints |
-| `module3_pid`               | simulator | PID altitude, fly-a-distance, and a vision+PID gate visual-servo |
+| `module3_pid`               | simulator | PID altitude, fly-a-distance, vision+PID visual-servo, and feedforward tracking of a moving reference |
+| `module4_heading_hold`      | simulator | Yaw heading hold from the IMU, with angle wrap-around |
+
+### Week 4 — Integration (`labs/week4_integration/`)
+
+Multi-axis flight labs that build on Week 3 control.
+
+| Module | Type | Topic |
+|--------|------|-------|
+| `module1_waypoint`  | simulator | Dead-reckon position and fly to a 3-axis waypoint |
+| `module2_patterns`  | simulator | Sequence waypoints to fly a square |
+| `module3_trajectory`| simulator | Velocity-commanded trajectory tracking: a timed segment, a cubic-spline waypoint course (drone racing), and orbiting a point |
 
 Each module folder has its own `README.md` with the details.
 
 ---
 
-## 6. Troubleshooting
+## 6. Recording & plotting your flights
+
+Reading numbers scroll past is a poor way to tell whether a controller is doing the right
+thing. You can record a flight to a CSV and plot it.
+
+Set the `NEO_RECORD` environment variable to a file path and run any simulator lab as
+usual. Each frame's telemetry is appended — time, height, velocity, heading, and the
+true world x/z position:
+
+```bash
+NEO_RECORD=run.csv drone sim course/week3_controls/module3_pid/main.py
+```
+
+Then plot it (writes `run.png` next to the CSV):
+
+```bash
+python3 labs/plot_log.py run.csv
+```
+
+Each channel is drawn against time, and if the log has `x`/`z` columns it adds a top-down
+trajectory. This shows what the prints can't: a P-controller's steady-state droop vs. PID
+settling, overshoot and oscillation, or whether your square is actually square.
+
+To log your own extra channels (for example a gate's pixel width), call
+`neo_lab.record(drone, gate_width=w)` from inside a step's `update`.
+
+> A lab keeps running and recording after it lands, so stop it with `Ctrl-C` once it
+> finishes — otherwise the CSV keeps growing with on-the-ground samples.
+
+Each flying module has a reference plot of a correct solution run at
+`<module>/solutions/reference_run.png` — record your own flight and compare against it.
+
+---
+
+## 7. Troubleshooting
 
 | Symptom | Fix |
 |---------|-----|

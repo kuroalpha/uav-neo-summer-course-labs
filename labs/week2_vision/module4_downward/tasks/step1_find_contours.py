@@ -5,7 +5,6 @@ GNU General Public License v3.0
 Week 2/3 Lab — Step 1: Find Gate Contours
 Threshold the glowing gate edges below the drone and count contours.
 The downward camera sees gates as bright WHITE frames.
-Source: 04_Downward.ipynb (contour analysis), retargeted to the sim scene.
 """
 
 import drone_core
@@ -16,7 +15,7 @@ import numpy as np
 # -- Course setup: makes the shared `neo_lab` helper importable.
 #    You don't need to read or change this block. --
 import os as _os, sys as _sys
-_d = _os.path.dirname(_os.path.abspath(__file__))
+_d = _os.path.dirname(_os.path.realpath(__file__))
 while _os.path.basename(_d) != "labs" and _os.path.dirname(_d) != _d:
     _d = _os.path.dirname(_d)
 if _d not in _sys.path:
@@ -45,11 +44,9 @@ def update(drone):
     ##################################
     #### START PUT CODE HERE #########
 
-    # Gates glow bright, so threshold by brightness (HSV Value), not color.
-    # 1. image = drone.camera.get_downward_image()
-    # 2. mask  = neo_lab.bright_mask(image, V_MIN)   # 0/255 mask of bright pixels
-    # 3. contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-    # 4. When _timer >= HOVER_TIME: print len(contours) and set _done = True
+    # Gates glow bright, so threshold by brightness (HSV Value), not color:
+    # neo_lab.bright_mask(image, V_MIN) gives a 0/255 mask. Find its contours and, after
+    # HOVER_TIME, print how many there are and set _done. See the README (Key terms).
 
     ###### END PUT CODE HERE #########
     ##################################

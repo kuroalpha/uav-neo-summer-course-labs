@@ -5,7 +5,6 @@ GNU General Public License v3.0
 Week 2/3 Lab — Step 1: HSV Color Mask
 Mask the CYAN glowing gates in the forward camera using an HSV range.
 (Gates glow cyan ~hue 85; the wall background is blue ~hue 108.)
-Source: 05_ColorSegmentation.ipynb (HSV masking), retargeted to the scene.
 """
 
 import drone_core
@@ -16,7 +15,7 @@ import numpy as np
 # -- Course setup: makes the shared `neo_lab` helper importable.
 #    You don't need to read or change this block. --
 import os as _os, sys as _sys
-_d = _os.path.dirname(_os.path.abspath(__file__))
+_d = _os.path.dirname(_os.path.realpath(__file__))
 while _os.path.basename(_d) != "labs" and _os.path.dirname(_d) != _d:
     _d = _os.path.dirname(_d)
 if _d not in _sys.path:
@@ -46,11 +45,10 @@ def update(drone):
     ##################################
     #### START PUT CODE HERE #########
 
-    # The gates glow cyan; the wall is blue. A single HSV range isolates the gates.
-    # 1. hsv  = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
-    # 2. mask = cv2.inRange(hsv, LOWER, UPPER)        # LOWER/UPPER are cyan bounds
-    # 3. coverage = np.count_nonzero(mask) / mask.size
-    # 4. When _timer >= HOVER_TIME: print coverage, set _done = True
+    # The gates glow cyan; the wall is blue. A single HSV range (LOWER..UPPER) isolates
+    # the gates: convert the forward color image to HSV and build a mask from that range.
+    # Report the fraction of masked pixels. Advance _timer and finish at HOVER_TIME.
+    # See the README (Key terms) for HSV masking.
 
     ###### END PUT CODE HERE #########
     ##################################

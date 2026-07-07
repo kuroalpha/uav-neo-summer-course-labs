@@ -5,7 +5,6 @@ GNU General Public License v3.0
 Week 2/3 Lab — Step 1: Detect the Bright Edge Pixels  (SOLUTION)
 Find the glowing gate-edge pixels in the downward camera.
 (The race scene has no colored ground line; gates glow white from above.)
-Source: 03_LinearRegression.ipynb (thresholding + np.argwhere).
 """
 
 import drone_core
@@ -16,7 +15,7 @@ import numpy as np
 # -- Course setup: makes the shared `neo_lab` helper importable.
 #    You don't need to read or change this block. --
 import os as _os, sys as _sys
-_d = _os.path.dirname(_os.path.abspath(__file__))
+_d = _os.path.dirname(_os.path.realpath(__file__))
 while _os.path.basename(_d) != "labs" and _os.path.dirname(_d) != _d:
     _d = _os.path.dirname(_d)
 if _d not in _sys.path:

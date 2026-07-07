@@ -5,7 +5,6 @@ GNU General Public License v3.0
 Week 2/3 Lab — Step 1: HSV Color Mask  (SOLUTION)
 Mask the CYAN glowing gates in the forward camera using an HSV range.
 (Gates glow cyan ~hue 85; the wall background is blue ~hue 108.)
-Source: 05_ColorSegmentation.ipynb (HSV masking), retargeted to the scene.
 """
 
 import drone_core
@@ -16,7 +15,7 @@ import numpy as np
 # -- Course setup: makes the shared `neo_lab` helper importable.
 #    You don't need to read or change this block. --
 import os as _os, sys as _sys
-_d = _os.path.dirname(_os.path.abspath(__file__))
+_d = _os.path.dirname(_os.path.realpath(__file__))
 while _os.path.basename(_d) != "labs" and _os.path.dirname(_d) != _d:
     _d = _os.path.dirname(_d)
 if _d not in _sys.path:
