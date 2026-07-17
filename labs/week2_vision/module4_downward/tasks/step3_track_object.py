@@ -61,7 +61,7 @@ def update(drone):
         _hold = 0.0
     if _hold >= HOLD_TIME:
         drone.flight.stop()
-        print("[Step 3] Centered over the gate")
+        print("Centered over the gate")
         _done = True    
     ##################################
     #### START PUT CODE HERE #########
