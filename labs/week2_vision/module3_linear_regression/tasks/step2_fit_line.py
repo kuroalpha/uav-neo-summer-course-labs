@@ -31,11 +31,13 @@ _timer = 0.0
 _done  = False
 
 def fit_line(points):
+    
     """Least-squares fit of y = m*x + b. points is the (row, col) array from
     np.argwhere, so column = x and row = y. See the README (Key terms) for the fit."""
     ##################################
     #### START PUT CODE HERE #########
-    m, b = 0.0, 0.0
+    p = points.astype(np.float64)
+    m, b = np.polyfit(points[:, 1], points[:, 0], 1)
     ###### END PUT CODE HERE #########
     ##################################
     return m, b
@@ -53,6 +55,16 @@ def update(drone):
     drone.flight.stop()   # hover in place
     ##################################
     #### START PUT CODE HERE #########
+    _timer += drone.get_delta_time()
+    img = drone.camera.get_downward_image()
+    mask = neo_lab.bright_mask(img, V_MIN) > 0
+    p = np.argwhere(mask)
+    if len(p) < MIN_PIXELS:
+        return False
+    m, b = fit_line(p)
+    if _timer >= HOVER_TIME:
+        print(f"[Step 2] Fitted edge slope m={m:.3f}, intercept b={b:.1f}")
+        _done = True
 
     # Build the bright-edge mask like Step 1 and collect the (row, col) of every bright
     # pixel. If there are fewer than MIN_PIXELS, there is not enough edge to fit -> return

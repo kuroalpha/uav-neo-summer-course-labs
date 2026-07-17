@@ -25,7 +25,9 @@ import neo_lab
 V_MIN         = 200
 MIN_PIXELS    = 200
 FORWARD_PITCH = 0.18     # constant forward speed
-MAX_ROLL      = 0.25     # strafe authority for centering
+MAX_ROLL      = 0.25     # strafe authority for centering the edge
+MAX_YAW       = 0.30     # turn authority for aligning with the edge
+YAW_GAIN      = 0.60     # yaw command per radian of edge tilt
 FOLLOW_TIME   = 12.0     # seconds to follow before landing
 IMAGE_CENTER  = 320      # 640-wide image -> center column
 
@@ -45,19 +47,48 @@ def update(drone):
         return True
     ##################################
     #### START PUT CODE HERE #########
+    _timer += drone.get_delta_time()
+    img = drone.camera.get_downward_image()
+    mask = neo_lab.bright_mask(img, V_MIN) > 0
+    p = np.argwhere(mask)
+    if len(p) < MIN_PIXELS:
+        drone.flight.stop()                 # lost the edge -> hover, but keep the clock running
+    else:
+        rows = p[:, 0].astype(np.float64)   # y of each bright pixel
+        cols = p[:, 1].astype(np.float64)   # x of each bright pixel
 
-    # GOAL: fly forward at FORWARD_PITCH while strafing (roll) to keep the bright
-    # edge under the middle of the downward camera.
+        # The edge runs ahead/behind us, so it is near-vertical in the downward image.
+        # Fit col = slope*row + b (never blows up for a vertical line, unlike y=m*x+b).
+        slope, _ = np.polyfit(rows, cols, 1)   # slope = sideways drift per forward pixel
+
+        # Roll: strafe to keep the edge centered under the camera (proportional to offset).
+        offset = (cols.mean() - IMAGE_CENTER) / IMAGE_CENTER   # -1 (left) .. +1 (right)
+        roll = uav_utils.clamp(offset * MAX_ROLL, -MAX_ROLL, MAX_ROLL)
+
+        # Yaw: rotate to align our heading with the edge so we fly ALONG it, not across it.
+        # Forward is up the image (row decreasing), so a positive slope means the edge
+        # leans ahead-left -> yaw left (negative yaw turns left). Flip the sign if it
+        # turns the wrong way.
+        tilt = np.arctan(slope)                 # edge angle away from straight-ahead, radians
+        yaw = uav_utils.clamp(-YAW_GAIN * tilt, -MAX_YAW, MAX_YAW)
+
+        drone.flight.send_pcmd(FORWARD_PITCH, roll, yaw, 0.0)
+    if _timer >= FOLLOW_TIME:
+        print(f"[Step 3] Followed the edge for {FOLLOW_TIME:.1f} seconds")
+        _done = True
+    # GOAL: fly forward at FORWARD_PITCH while ROLLING to keep the bright edge centered
+    # AND YAWING to align the drone with the edge, so it follows the line along its length.
     #
     # Tools: drone.camera.get_downward_image(); neo_lab.bright_mask(image, V_MIN);
-    #        np.argwhere(mask) -> bright pixel (row, col); uav_utils.clamp(...);
-    #        drone.flight.send_pcmd(pitch, roll, yaw, throttle).
+    #        np.argwhere(mask) -> bright pixel (row, col); np.polyfit(x, y, 1);
+    #        uav_utils.clamp(...); drone.flight.send_pcmd(pitch, roll, yaw, throttle).
     #
-    # The average column of the bright pixels tells you how far off-center the edge
-    # is. Turn that pixel offset into a roll command (clamped to MAX_ROLL): an edge
-    # right of center means roll right to chase it. If you see too few bright pixels,
-    # hold position rather than steering on noise -- but keep the timer running every
-    # frame and finish after FOLLOW_TIME regardless, so losing the edge never hangs.
+    # The average column of the bright pixels tells you how far off-center the edge is
+    # (-> roll). Fitting col = slope*row + b gives the edge's tilt (-> yaw): steering
+    # only with roll keeps you OVER the line but not ALONG it, so add yaw to turn with
+    # the line. If you see too few bright pixels, hold position rather than steering on
+    # noise -- but keep the timer running every frame and finish after FOLLOW_TIME
+    # regardless, so losing the edge never hangs.
 
     ###### END PUT CODE HERE #########
     ##################################

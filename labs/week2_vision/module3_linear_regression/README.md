@@ -56,7 +56,7 @@ Press **Enter** in the simulator window to start.
 
 1. **`step1_detect_line.py`** — find and count the bright edge pixels
 2. **`step2_fit_line.py`** — fit y = m·x + b to those pixels
-3. **`step3_follow_line.py`** — fly forward while rolling to keep the edge centered
+3. **`step3_follow_line.py`** — fly forward, rolling to keep the edge centered and yawing to align with it
 
 ## What to expect
 
@@ -66,7 +66,7 @@ Steps 1-2 hover and report; Step 3 flies forward, steering to stay over a bright
 
 - Step 1 prints a bright-pixel count in the thousands while a gate edge is in view.
 - Step 2 prints a slope `m` and intercept `b` (any finite numbers — the exact values depend on what the camera sees).
-- Step 3 flies forward for `FOLLOW_TIME` seconds, visibly correcting left/right to stay over the edge, then lands.
+- Step 3 flies forward for `FOLLOW_TIME` seconds, correcting left/right (roll) to stay over the edge and turning (yaw) to line up with it, then lands.
 
 ## If it doesn't work
 
@@ -79,9 +79,8 @@ Steps 1-2 hover and report; Step 3 flies forward, steering to stay over a bright
 
 ## Going further (optional)
 
-- A nearly-vertical edge makes `y = m·x + b` blow up (slope → ∞). Detect that case and fit `x = m·y + b` instead.
-- Use the fitted line's *angle* (not just the offset) to also yaw the drone so it flies along the edge, not just over it.
 - Reject outliers: refit after dropping points far from the first fit (a one-step RANSAC).
+- Add a little forward-speed scaling: slow down (lower `FORWARD_PITCH`) when the yaw error is large so sharp bends don't fling you off the edge.
 
 ---
 

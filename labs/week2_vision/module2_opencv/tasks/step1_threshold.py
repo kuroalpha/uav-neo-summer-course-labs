@@ -42,6 +42,14 @@ def update(drone):
     drone.flight.stop()   # hover in place
     ##################################
     #### START PUT CODE HERE #########
+    img = drone.camera.get_downward_image()
+    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    _, binary = cv2.threshold(gray, THRESHOLD_VALUE, 255, cv2.THRESH_BINARY)
+    white_frac = np.count_nonzero(binary) / binary.size
+    if _timer >= HOVER_TIME:
+        print(f"[Step 1] Threshold @ {THRESHOLD_VALUE}: "
+              f"{white_frac * 100:.1f}% of pixels are white")
+        _done = True
 
     # Grab the downward image (drone.camera.get_downward_image()), convert it to
     # grayscale, and threshold at THRESHOLD_VALUE to make a binary mask. Report the

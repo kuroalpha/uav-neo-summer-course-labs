@@ -50,7 +50,23 @@ def update(drone):
         return True
     ##################################
     #### START PUT CODE HERE #########
-
+    img = drone.camera.get_color_image()
+    largest_contour = neo_lab.largest_cyan_gate(img, MIN_AREA)
+    if largest_contour is None:
+        drone.flight.send_pcmd(0, 0, SEARCH_YAW, 0)
+        return False
+    x, y, w, h = cv2.boundingRect(largest_contour)
+    distance = FOCAL_PX * REAL_GATE_WIDTH / max(w, 1)
+    gate_col = x + w / 2.0
+    err = (gate_col - COL_CENTER) / COL_CENTER
+    yaw = uav_utils.clamp(err * MAX_YAW, -MAX_YAW, MAX_YAW)
+    if distance <= STOP_DIST:
+        drone.flight.stop()
+        print(f" distance ~ {distance:.2f} m")
+        _done = True
+        return True
+    drone.flight.send_pcmd(APPROACH_PITCH, 0, yaw, 0)
+    return False
     # GOAL: fly toward the gate, estimating distance from its apparent width, and
     # stop once distance <= STOP_DIST.
     #

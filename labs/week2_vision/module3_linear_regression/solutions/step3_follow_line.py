@@ -25,7 +25,9 @@ import neo_lab
 V_MIN         = 200
 MIN_PIXELS    = 200
 FORWARD_PITCH = 0.18     # constant forward speed
-MAX_ROLL      = 0.25     # strafe authority for centering
+MAX_ROLL      = 0.25     # strafe authority for centering the edge
+MAX_YAW       = 0.30     # turn authority for aligning with the edge
+YAW_GAIN      = 0.60     # yaw command per radian of edge tilt
 FOLLOW_TIME   = 12.0     # seconds to follow before landing
 IMAGE_CENTER  = 320      # 640-wide image -> center column
 
@@ -50,10 +52,24 @@ def update(drone):
     if len(points) < MIN_PIXELS:
         drone.flight.stop()                 # lost the edge -> hover, but keep the clock running
     else:
-        edge_col = points[:, 1].mean()      # average column of the bright edge
-        offset = (edge_col - IMAGE_CENTER) / IMAGE_CENTER   # -1 (left) .. +1 (right)
+        rows = points[:, 0].astype(np.float64)
+        cols = points[:, 1].astype(np.float64)
+
+        # The edge runs ahead/behind us, so it is near-vertical in the downward image.
+        # Fit col = slope*row + b (never blows up for a vertical line, unlike y=m*x+b).
+        slope, _ = np.polyfit(rows, cols, 1)   # slope = sideways drift per forward pixel
+
+        # Roll: strafe to keep the edge centered under the camera.
+        offset = (cols.mean() - IMAGE_CENTER) / IMAGE_CENTER   # -1 (left) .. +1 (right)
         roll = uav_utils.clamp(offset * MAX_ROLL, -MAX_ROLL, MAX_ROLL)
-        drone.flight.send_pcmd(FORWARD_PITCH, roll, 0, 0)
+
+        # Yaw: align heading with the edge so we fly ALONG it, not just across it.
+        # Forward is up the image (row decreasing); positive slope -> edge leans
+        # ahead-left -> yaw left (negative). Flip the sign if it turns the wrong way.
+        tilt = np.arctan(slope)                 # edge angle from straight-ahead, radians
+        yaw = uav_utils.clamp(-YAW_GAIN * tilt, -MAX_YAW, MAX_YAW)
+
+        drone.flight.send_pcmd(FORWARD_PITCH, roll, yaw, 0)
     if _timer >= FOLLOW_TIME:
         drone.flight.stop()
         print("[Step 3] Finished following the edge")

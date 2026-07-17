@@ -46,7 +46,7 @@ def update(drone):
     x, y, w, h = cv2.boundingRect(best)
     _timer += drone.get_delta_time()
     if _timer >= HOVER_TIME:
-        print(f"[Step 1] Gate apparent width = {w} px")
+        print(f"width = {w} px")
         _done = True
     return _done
 

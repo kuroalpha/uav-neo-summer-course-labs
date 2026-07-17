@@ -50,11 +50,14 @@ def update(drone):
     x, y, w, h = cv2.boundingRect(best)
     distance = FOCAL_PX * REAL_GATE_WIDTH / max(w, 1)
     gate_col = x + w / 2.0
+    gate_row = y + h / 2.0
+
     err = (gate_col - COL_CENTER) / COL_CENTER
+    pitch = (gate_row - 240) / 240 * 0.1
     yaw = uav_utils.clamp(err * MAX_YAW, -MAX_YAW, MAX_YAW)
     if distance <= STOP_DIST:
         drone.flight.stop()
-        print(f"[Step 2] Reached gate, distance ~ {distance:.2f} m")
+        print(f"distance ~ {distance:.2f} m")
         _done = True
         return True
     drone.flight.send_pcmd(APPROACH_PITCH, 0, yaw, 0)
