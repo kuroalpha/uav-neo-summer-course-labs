@@ -42,6 +42,23 @@ def update(drone):
     global _done
     if _done:
         return True
+    _timer += drone.get_delta_time()
+    img = drone.camera.get_color_image()
+    largest_contour = neo_lab.largest_cyan_gate(img, MIN_AREA)
+    if largest_contour is None:
+        drone.flight.send_pcmd(0, 0, SEARCH_YAW, 0)
+        return False
+    x, y, w, h = cv2.boundingRect(largest_contour)
+    gate_col = x + w / 2.0
+    err = (gate_col - COL_CENTER) / COL_CENTER
+    yaw = uav_utils.clamp(err * MAX_YAW, -MAX_YAW, MAX_YAW)
+    pitch = APPROACH_PITCH if abs(gate_col - COL_CENTER) < CENTER_TOL else 0.0
+    drone.flight.send_pcmd(pitch, 0, yaw, 0)
+    if w >= TARGET_WIDTH:
+        drone.flight.stop()
+        print(f"(width={w}px)")
+        _done = True
+    return _done
     ##################################
     #### START PUT CODE HERE #########
 

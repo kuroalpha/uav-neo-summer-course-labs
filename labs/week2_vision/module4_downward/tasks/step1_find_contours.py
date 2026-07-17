@@ -40,7 +40,14 @@ def update(drone):
     global _timer, _done
     if _done:
         return True
-    drone.flight.stop()   # hover in place
+    drone.flight.stop() 
+    _timer += drone.get_delta_time()
+    img = drone.camera.get_downward_image()
+    mask = neo_lab.bright_mask(img, V_MIN)
+    contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    if _timer >= HOVER_TIME:
+        print(f"Found {len(contours)} contours")
+        _done = True
     ##################################
     #### START PUT CODE HERE #########
 

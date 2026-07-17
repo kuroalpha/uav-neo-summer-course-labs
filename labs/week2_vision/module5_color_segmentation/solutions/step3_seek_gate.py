@@ -55,7 +55,7 @@ def update(drone):
     drone.flight.send_pcmd(pitch, 0, yaw, 0)
     if w >= TARGET_WIDTH:
         drone.flight.stop()
-        print(f"[Step 3] Reached the gate (width={w}px)")
+        print(f"(width={w}px)")
         _done = True
     return _done
 

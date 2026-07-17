@@ -41,7 +41,21 @@ def update(drone):
     global _timer, _done
     if _done:
         return True
-    drone.flight.stop()   # hover in place
+    image = drone.camera.get_color_image() 
+    hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
+    masked = cv2.inRange(hsv, LOWER, UPPER)
+    frac = np.count_nonzero(masked) / masked.size
+    _timer += drone.get_delta_time()
+    largest = neo_lab.largest_cyan_gate(image, MIN_AREA)
+    if largest is None:
+        return False
+    else:
+        print(cv2.boundingRect(largest))
+
+    if _timer > HOVER_TIME:
+        print(f"Fraction of masked:{frac}")
+        _done = True
+    return _done
     ##################################
     #### START PUT CODE HERE #########
 

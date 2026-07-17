@@ -42,6 +42,14 @@ def update(drone):
     if _done:
         return True
     drone.flight.stop()   # hover in place
+    _timer += drone.get_delta_time()
+    img = drone.camera.get_forward_image()
+    hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
+    mask = cv2.inRange(hsv, LOWER, UPPER)
+    coverage = np.count_nonzero(mask) / mask.size
+    if _timer >= HOVER_TIME:
+        print(f"{coverage * 100:.1f}% of the image")
+        _done = True
     ##################################
     #### START PUT CODE HERE #########
 

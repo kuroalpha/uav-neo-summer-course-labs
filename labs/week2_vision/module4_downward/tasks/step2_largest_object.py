@@ -41,6 +41,17 @@ def update(drone):
     if _done:
         return True
     drone.flight.stop()   # hover in place
+    _timer += drone.get_delta_time()
+    img = drone.camera.get_downward_image()
+    largest_contour = neo_lab.largest_bright_contour(img, V_MIN, MIN_AREA)
+    if largest_contour is None:
+        return False
+
+    center = uav_utils.contour_center(largest_contour)
+    area = uav_utils.contour_area(largest_contour)
+    if _timer >= HOVER_TIME:
+        print(f"Largest contour center: {center}, area: {area}")
+        _done = True
     ##################################
     #### START PUT CODE HERE #########
 

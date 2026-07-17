@@ -43,13 +43,13 @@ def update(drone):
         return True
     drone.flight.stop()   # hover in place
     _timer += drone.get_delta_time()
-    image = drone.camera.get_color_image()
-    best = neo_lab.largest_cyan_gate(image, MIN_AREA)   # square-ish cyan gate, not a line
-    if best is None:
+    img = drone.camera.get_color_image()
+    largest = neo_lab.largest_cyan_gate(img, MIN_AREA)   # square-ish cyan gate, not a line
+    if largest is None:
         return False
-    x, y, w, h = cv2.boundingRect(best)
+    x, y, w, h = cv2.boundingRect(largest)
     if _timer >= HOVER_TIME:
-        print(f"[Step 2] Gate bounding box: x={x}, y={y}, w={w}, h={h}")
+        print(f"x={x}, y={y}, w={w}, h={h}")
         _done = True
     return _done
 

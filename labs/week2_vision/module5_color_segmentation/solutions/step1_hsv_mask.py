@@ -43,12 +43,12 @@ def update(drone):
         return True
     drone.flight.stop()   # hover in place
     _timer += drone.get_delta_time()
-    image = drone.camera.get_color_image()
-    hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
+    img = drone.camera.get_color_image()
+    hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
     mask = cv2.inRange(hsv, LOWER, UPPER)
     coverage = np.count_nonzero(mask) / mask.size
     if _timer >= HOVER_TIME:
-        print(f"[Step 1] Cyan gate pixels cover {coverage * 100:.1f}% of the image")
+        print(f"{coverage * 100:.1f}% of the image")
         _done = True
     return _done
 
