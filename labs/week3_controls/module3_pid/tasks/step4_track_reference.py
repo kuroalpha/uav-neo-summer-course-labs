@@ -24,8 +24,8 @@ if _d not in _sys.path:
 import neo_lab
 
 # -- Constants --------------------------------------------------------------
-BASE_HEIGHT = 3.0
-AMPLITUDE = 1.5
+BASE_HEIGHT = 0.6
+AMPLITUDE = 0.3
 PERIOD = 6.0
 CYCLES = 2
 DURATION = PERIOD * CYCLES
@@ -60,7 +60,7 @@ def pid_control(err, err_int, err_dot, kp, ki, kd):
     """Return the PID controller output from the three gain terms (see README, Key terms)."""
     ##################################
     #### START PUT CODE HERE #########
-    output = 0.0
+    output = kp * err + ki * err_int + kd * err_dot
     ###### END PUT CODE HERE #########
     ##################################
     return output
@@ -84,16 +84,23 @@ def update(drone):
     r, r_dot = reference(_t)
     ##################################
     #### START PUT CODE HERE #########
+    h = neo_lab.height(drone)
+    error = r - h
+    _max_err = max(_max_err, abs(error))
 
-    # GOAL: keep the drone ON the moving target r from reference(_t), not behind it.
-    #
-    # Run PID on the height error (r - neo_lab.height(drone)) exactly as in Step 1:
-    # track the integral (clamp to +/-INT_CLAMP) and derivative yourself, then call
-    # pid_control(...). THEN add a feedforward term: the target is already moving at
-    # r_dot, so command that speed directly (KFF * r_dot) instead of waiting for error
-    # to build. Sum feedback + feedforward, clamp to +/-THROTTLE_LIMIT, and send it as
-    # throttle. Update _max_err with the largest abs(error) so far. See the README
-    # ("Tracking a moving target") for why the feedforward term removes the lag.
+    # Feedback: PID on the tracking error (same structure as Step 1).
+    _err_int = uav_utils.clamp(_err_int + error * dt, -INT_CLAMP, INT_CLAMP)
+    err_dot = (error - _prev_err) / dt if dt > 0.0 else 0.0
+    _prev_err = error
+    feedback = pid_control(error, _err_int, err_dot, KP, KI, KD)
+
+    # Feedforward: the target is already moving at r_dot, so command that speed directly
+    # (scaled into throttle units) instead of waiting for an error to build up. This is
+    # what stops the drone from perpetually lagging behind the moving reference.
+    feedforward = KFF * r_dot
+
+    throttle = uav_utils.clamp(feedback + feedforward, -THROTTLE_LIMIT, THROTTLE_LIMIT)
+    drone.flight.send_pcmd(0, 0, 0, throttle)
 
     ###### END PUT CODE HERE #########
     ##################################

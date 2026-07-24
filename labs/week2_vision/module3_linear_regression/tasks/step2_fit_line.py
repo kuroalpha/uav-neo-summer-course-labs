@@ -3,7 +3,7 @@ MIT BWSI Autonomous Drone Racing Course - UAV Neo
 GNU General Public License v3.0
 
 Week 2/3 Lab — Step 2: Fit a Line (Least Squares)
-Fit y = m*x + b to the bright edge pixels with linear regression.
+Fit y = m*x + b to the colored line pixels with linear regression.
 """
 
 import drone_core
@@ -22,22 +22,21 @@ if _d not in _sys.path:
 import neo_lab
 
 # -- Constants --------------------------------------------------------------
-V_MIN      = 200
-MIN_PIXELS = 200
-HOVER_TIME = 3.0
+S_MIN         = 100
+MIN_PIXELS    = 200
+ADVANCE_PITCH = 0.15      # fly forward off the spawn pad to reach the line
+ADVANCE_TIME  = 8.0       # seconds of forward flight before fitting
 
 # -- Module-level state -----------------------------------------------------
 _timer = 0.0
 _done  = False
 
 def fit_line(points):
-    
     """Least-squares fit of y = m*x + b. points is the (row, col) array from
     np.argwhere, so column = x and row = y. See the README (Key terms) for the fit."""
     ##################################
     #### START PUT CODE HERE #########
-    p = points.astype(np.float64)
-    m, b = np.polyfit(points[:, 1], points[:, 0], 1)
+    m, b = 0.0, 0.0
     ###### END PUT CODE HERE #########
     ##################################
     return m, b
@@ -55,21 +54,11 @@ def update(drone):
     drone.flight.stop()   # hover in place
     ##################################
     #### START PUT CODE HERE #########
-    _timer += drone.get_delta_time()
-    img = drone.camera.get_downward_image()
-    mask = neo_lab.bright_mask(img, V_MIN) > 0
-    p = np.argwhere(mask)
-    if len(p) < MIN_PIXELS:
-        return False
-    m, b = fit_line(p)
-    if _timer >= HOVER_TIME:
-        print(f"[Step 2] Fitted edge slope m={m:.3f}, intercept b={b:.1f}")
-        _done = True
 
-    # Build the bright-edge mask like Step 1 and collect the (row, col) of every bright
-    # pixel. If there are fewer than MIN_PIXELS, there is not enough edge to fit -> return
-    # False. Otherwise call fit_line() and print m, b. Advance _timer and finish at
-    # HOVER_TIME.
+    # First fly forward (ADVANCE_PITCH) for ADVANCE_TIME to leave the spawn pad, then hover.
+    # Build the colored-line mask like Step 1 and collect the (row, col) of every line pixel.
+    # If there are fewer than MIN_PIXELS, there is not enough line to fit -> return False.
+    # Otherwise call fit_line() and print m, b, then set _done.
 
     ###### END PUT CODE HERE #########
     ##################################
@@ -78,7 +67,7 @@ def update(drone):
 
 if __name__ == "__main__":
     _drone = drone_core.create_drone()
-    _launcher = neo_lab.Launcher(3.0)
+    _launcher = neo_lab.Launcher()
 
     def start():
         _launcher.reset()

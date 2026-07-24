@@ -22,7 +22,7 @@ import neo_lab
 
 # -- Constants --------------------------------------------------------------
 TARGET_DIST = 4.0    # meters forward
-TARGET_HEIGHT = 3.0  # hold launch height
+TARGET_HEIGHT = 1.0  # hold launch height
 KP = 0.15
 KI = 0.0
 KD = 0.5    # strong velocity damping to avoid overshoot
@@ -45,7 +45,7 @@ def pid_control(err, err_int, err_dot, kp, ki, kd):
     """Return the PID controller output from the three gain terms (see README, Key terms)."""
     ##################################
     #### START PUT CODE HERE #########
-    output = 0.0
+    output = kp * err + ki * err_int + kd * err_dot
     ###### END PUT CODE HERE #########
     ##################################
     return output
@@ -66,13 +66,42 @@ def update(drone):
         return True
     ##################################
     #### START PUT CODE HERE #########
+    dt = drone.get_delta_time()
+    _t += dt
 
-    # There is no direct (x, z) readout, so estimate forward distance by dead reckoning:
-    # integrate the forward component of drone.physics.get_linear_velocity() over time.
-    # PID that distance to TARGET_DIST for the pitch command (clamped to PITCH_LIMIT), and
-    # use a proportional term (ALT_KP) on height to hold TARGET_HEIGHT. Count as arrived
-    # only after MIN_TRAVEL, once speed drops below SETTLE_SPEED for HOLD_TIME. See the
-    # README (Key terms) for dead reckoning and the PID law.
+    # Dead reckoning: no forward-position sensor, so integrate forward velocity.
+    # get_linear_velocity() returns (right, up, forward); index 2 is forward.
+    v_fwd = float(drone.physics.get_linear_velocity()[2])
+    _pos += v_fwd * dt
+
+    error = TARGET_DIST - _pos
+    _err_int += error * dt  # KI is 0 here, but keep the term general.
+
+    # Use the measured forward velocity as the derivative of the error (error falls as we
+    # move forward), so KD brakes us before we overshoot the target distance.
+    err_dot = -v_fwd
+    _prev_err = error
+
+    pitch = uav_utils.clamp(
+        pid_control(error, _err_int, err_dot, KP, KI, KD),
+        -PITCH_LIMIT, PITCH_LIMIT,
+    )
+
+    # Proportional altitude hold on the throttle channel.
+    h = neo_lab.height(drone)
+    throttle = uav_utils.clamp(ALT_KP * (TARGET_HEIGHT - h), -THROTTLE_LIMIT, THROTTLE_LIMIT)
+    drone.flight.send_pcmd(pitch, 0, 0, throttle)
+
+    # Arrived only after flying for MIN_TRAVEL seconds and then slowing below SETTLE_SPEED
+    # for HOLD_TIME (so we don't declare victory mid-flight while briefly slow).
+    if _t >= MIN_TRAVEL and abs(v_fwd) < SETTLE_SPEED:
+        _hold += dt
+    else:
+        _hold = 0.0
+    if _hold >= HOLD_TIME:
+        drone.flight.stop()
+        print(f"[Step 2] Arrived ~{TARGET_DIST}m (est {_pos:.2f}m)")
+        _done = True
 
     ###### END PUT CODE HERE #########
     ##################################
@@ -81,7 +110,7 @@ def update(drone):
 
 if __name__ == "__main__":
     _drone = drone_core.create_drone()
-    _launcher = neo_lab.Launcher(3.0)
+    _launcher = neo_lab.Launcher()
 
     def start():
         _launcher.reset()

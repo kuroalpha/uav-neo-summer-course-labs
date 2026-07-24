@@ -21,13 +21,13 @@ if _d not in _sys.path:
 import neo_lab
 
 # -- Constants --------------------------------------------------------------
-TARGET_HEIGHT = 5.0
+TARGET_HEIGHT = 0.5
 KP = 0.18
 KI = 0.06
 KD = 0.02
 INT_CLAMP = 3.0      # anti-windup limit on the integral
 THROTTLE_LIMIT = 0.5
-TOL = 0.3
+TOL = 0.15
 HOLD_TIME = 3.0
 
 # -- Module-level state -----------------------------------------------------
@@ -40,7 +40,7 @@ def pid_control(err, err_int, err_dot, kp, ki, kd):
     """Return the PID controller output from the three gain terms (see README, Key terms)."""
     ##################################
     #### START PUT CODE HERE #########
-    output = 0.0
+    output = kp * err + ki * err_int + kd * err_dot
     ###### END PUT CODE HERE #########
     ##################################
     return output
@@ -59,12 +59,33 @@ def update(drone):
         return True
     ##################################
     #### START PUT CODE HERE #########
+    dt = drone.get_delta_time()
+    h = neo_lab.height(drone)
+    error = TARGET_HEIGHT - h
 
-    # Implement pid_control() above, then use it to drive the drone to TARGET_HEIGHT.
-    # Track the integral of the height error (with anti-windup at INT_CLAMP) and its
-    # derivative yourself. Throttle is a vertical-velocity command; clamp it to
-    # +/-THROTTLE_LIMIT. Finish (set _done) once the height stays within TOL for
-    # HOLD_TIME. See the README (Key terms) for the PID law and anti-windup.
+    # Integral with anti-windup: accumulate the error over time, but clamp so it can't
+    # wind up huge while we are far from target.
+    _err_int = uav_utils.clamp(_err_int + error * dt, -INT_CLAMP, INT_CLAMP)
+
+    # Derivative: how fast the error is changing (guard against a zero first-frame dt).
+    err_dot = (error - _prev_err) / dt if dt > 0.0 else 0.0
+    _prev_err = error
+
+    throttle = uav_utils.clamp(
+        pid_control(error, _err_int, err_dot, KP, KI, KD),
+        -THROTTLE_LIMIT, THROTTLE_LIMIT,
+    )
+    drone.flight.send_pcmd(0, 0, 0, throttle)
+
+    # Finish once we've held within TOL for HOLD_TIME.
+    if abs(error) < TOL:
+        _hold += dt
+    else:
+        _hold = 0.0
+    if _hold >= HOLD_TIME:
+        drone.flight.stop()
+        print(f"[Step 1] Held {TARGET_HEIGHT}m (final {h:.2f}m)")
+        _done = True
 
     ###### END PUT CODE HERE #########
     ##################################
@@ -73,7 +94,7 @@ def update(drone):
 
 if __name__ == "__main__":
     _drone = drone_core.create_drone()
-    _launcher = neo_lab.Launcher(3.0)
+    _launcher = neo_lab.Launcher()
 
     def start():
         _launcher.reset()

@@ -3,8 +3,7 @@ MIT BWSI Autonomous Drone Racing Course - UAV Neo
 GNU General Public License v3.0
 
 Week 2/3 Lab — Step 3: Visual Servoing (Vision + PID)
-Capstone: use a PID loop on the camera pixel error to keep a glowing
-gate centered by yawing. Combines Week 2 vision with Week 3 control.
+Use a PID loop on the camera pixel error to keep a gate centered by yawing.
 """
 
 import drone_core
@@ -23,60 +22,90 @@ if _d not in _sys.path:
 import neo_lab
 
 # -- Constants --------------------------------------------------------------
-V_MIN = 200
-MIN_AREA = 500
 COL_CENTER = 320
 KP = 0.35
 KI = 0.0
 KD = 0.2
 MAX_YAW = 0.25
-SEARCH_YAW = 0.2
+SEARCH_YAW = 0.15    # slow yaw while searching
+SEARCH_PITCH = 0.1   # creep forward while searching; ArUco tags decode only up close
 CENTER_TOL = 0.15    # normalized error considered centered
 HOLD_TIME = 1.0
+SEARCH_TIMEOUT = 15.0  # land instead of scanning forever if no gate is ever seen
 
 # -- Module-level state -----------------------------------------------------
 _err_int = 0.0
 _prev_err = 0.0
-_target_col = None
 _hold = 0.0
+_search_t = 0.0
 _done = False
 
 def pid_control(err, err_int, err_dot, kp, ki, kd):
     """Return the PID controller output from the three gain terms (see README, Key terms)."""
     ##################################
     #### START PUT CODE HERE #########
-    output = 0.0
+    output = kp * err + ki * err_int + kd * err_dot
     ###### END PUT CODE HERE #########
     ##################################
     return output
 
 def reset():
-    global _err_int, _prev_err, _target_col, _hold, _done
+    global _err_int, _prev_err, _hold, _search_t, _done
     _err_int = 0.0
     _prev_err = 0.0
-    _target_col = None
     _hold = 0.0
+    _search_t = 0.0
     _done = False
 
 
 def update(drone):
-    global _err_int, _prev_err, _target_col, _hold, _done
+    global _err_int, _prev_err, _hold, _search_t, _done
     if _done:
         return True
     ##################################
     #### START PUT CODE HERE #########
+    dt = drone.get_delta_time()
+    image = drone.camera.get_color_image()
+    gate = neo_lab.detect_gate(image)
 
-    # GOAL: yaw with a PID loop so a glowing gate stays centered in the forward
-    # camera; finish once it is centered (abs(error) < CENTER_TOL) for HOLD_TIME.
-    #
-    # Available helpers: drone.camera.get_color_image(); drone.get_delta_time();
-    #   neo_lab.gate_nearest_center(...) and neo_lab.gate_nearest_to(...) to find gates;
-    #   uav_utils.get_contour_center; uav_utils.clamp; your pid_control() above.
-    #
-    # Lock onto ONE gate (store its column in _target_col) so the target does not jump
-    # between gates. Turn the gate's horizontal offset from the image center into a
-    # normalized error, PID it to a yaw command clamped to MAX_YAW, and sweep at SEARCH_YAW
-    # when no gate is in view. See the README (Key terms) and Week 2 for finding gates.
+    if gate is None:
+        # No gate decoded: creep forward while sweeping so the tags get close enough to
+        # read. Give up (land) if we never find one.
+        _search_t += dt
+        if _search_t >= SEARCH_TIMEOUT:
+            drone.flight.stop()
+            print("[Step 3] No gate found within SEARCH_TIMEOUT; landing")
+            _done = True
+            return _done
+        drone.flight.send_pcmd(SEARCH_PITCH, 0, SEARCH_YAW, 0)
+        # Reset the PID/hold state so a stale error doesn't kick us on reacquire.
+        _err_int = 0.0
+        _prev_err = 0.0
+        _hold = 0.0
+        return _done
+
+    _search_t = 0.0
+
+    # Normalized pixel error: 0 centered, +1 gate at the right edge, -1 at the left.
+    error = (gate.cx - COL_CENTER) / COL_CENTER
+    _err_int += error * dt
+    err_dot = (error - _prev_err) / dt if dt > 0.0 else 0.0
+    _prev_err = error
+
+    yaw = uav_utils.clamp(
+        pid_control(error, _err_int, err_dot, KP, KI, KD),
+        -MAX_YAW, MAX_YAW,
+    )
+    drone.flight.send_pcmd(0, 0, yaw, 0)
+
+    if abs(error) < CENTER_TOL:
+        _hold += dt
+    else:
+        _hold = 0.0
+    if _hold >= HOLD_TIME:
+        drone.flight.stop()
+        print(f"[Step 3] Gate centered (error {error:+.2f})")
+        _done = True
 
     ###### END PUT CODE HERE #########
     ##################################
@@ -85,7 +114,7 @@ def update(drone):
 
 if __name__ == "__main__":
     _drone = drone_core.create_drone()
-    _launcher = neo_lab.Launcher(3.0)
+    _launcher = neo_lab.Launcher()
 
     def start():
         _launcher.reset()
